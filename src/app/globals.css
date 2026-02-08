@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  /* --- Typography --- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* --- Color Palette References (matches previous components) --- */
+  /* These map loosely to Tailwind's Emerald (Primary) and Slate/Blue (Secondary) */
+  --primary-glow: 16 185 129; /* Emerald-500 */
+  --secondary-glow: 14 165 233; /* Sky-500 */
+  
+  /* --- Global Radius --- */
+  --radius-lg: 1rem;    /* 16px */
+  --radius-xl: 1.5rem;  /* 24px */
+}
+
+/* --- Base Reset & Typography --- */
+body {
+  font-family: var(--font-sans);
+  color: #0f172a; /* Slate-900 */
+  background-color: #f8fafc; /* Slate-50 */
+  
+  /* Sophisticated Background Mesh: Blending Pale Mint & Soft Azure */
+  background-image: 
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+    linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+  
+  background-attachment: fixed;
+  min-height: 100vh;
+  
+  /* High-end Text Rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  
+  /* Selection Color (Teal/Emerald Brand) */
+  ::selection {
+    background-color: rgba(16, 185, 129, 0.2); /* Emerald-500 at 20% */
+    color: #064e3b; /* Emerald-900 */
+  }
+}
+
+/* --- Custom Scrollbar (Enterprise Polish) --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Slate-300 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; /* Slate-400 */
+}
+
+/* --- Animation Utilities (Used in React Components) --- */
+
+/* 1. Fade In Up (used for cards and main content) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 2. Soft Ping (used for status indicators) */
+@keyframes softPing {
+  75%, 100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: softPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* --- Utility Classes --- */
+
+/* Glassmorphism Card (Refined) */
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.02),
+    0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+/* Container */
+.container-app {
+  width: 100%;
+  max-width: 80rem; /* 1280px for dashboard layout */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Focus States (Accessibility & Design) */
+:focus-visible {
+  outline: 2px solid #10b981; /* Emerald-500 */
+  outline-offset: 2px;
+}
+
+/* Button & Card Hovers (Smooth Transition) */
+button, a, .group {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
