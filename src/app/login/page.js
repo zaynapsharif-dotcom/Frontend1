@@ -110,11 +110,12 @@ export default function LoginPage() {
               {banner.message}
             </div>
           ) : null}
+          
 
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">
-                Voter ID
+                Voter Id
               </label>
               <input
                 value={voterId}
