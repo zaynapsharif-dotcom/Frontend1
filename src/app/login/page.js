@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
 import { apiPost, handleError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 
+import { enforceLiveness } from "../../lib/livenessGuard";
+
+
 export default function LoginPage() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // If not passed recently, redirect to /liveness?next=/login
+    enforceLiveness(router, pathname || "/login");
+  }, [router, pathname]);
+
   const auth = useAuth();
 
   const [voterId, setVoterId] = useState("");
@@ -67,7 +78,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-teal-50/20 p-4 sm:p-6 font-sans">
-      
+
       {/* Background Ambience */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-100/40 rounded-full blur-[100px] -translate-y-1/2" />
@@ -75,7 +86,7 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-10 animate-fade-in-up">
-        
+
         {/* Header Branding */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-emerald-950">
@@ -88,7 +99,7 @@ export default function LoginPage() {
 
         {/* Glassmorphism Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
-          
+
           {/* Status Banners */}
           {banner ? (
             <div
@@ -102,17 +113,21 @@ export default function LoginPage() {
             >
               <span className="shrink-0 mt-0.5">
                 {banner.type === "error" ? (
-                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 ) : (
-                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 )}
               </span>
               {banner.message}
             </div>
           ) : null}
-          
+
 
           <form onSubmit={onSubmit} className="space-y-6">
+            <p className="mb-3 text-xs text-slate-500">
+              You may be redirected to a quick liveness check (blink + head turn) before login.
+            </p>
+
             <div className="space-y-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">
                 Voter Id
@@ -162,7 +177,7 @@ export default function LoginPage() {
               </span>
             </button>
           </form>
-          
+
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-400 font-medium">
               Protected by Enterprise Grade Security

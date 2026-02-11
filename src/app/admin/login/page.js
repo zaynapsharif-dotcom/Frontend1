@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
 import { apiPost, handleError } from "../../../lib/api";
 import { useAdmin } from "../../../lib/admin";
 
+import { enforceLiveness } from "../../../lib/livenessGuard";
+
+
 export default function AdminLoginPage() {
   const router = useRouter();
+  const pathname = usePathname();
+
+useEffect(() => {
+  // If not passed recently, redirect to /liveness?next=/admin/login
+enforceLiveness(router, pathname || "/admin/login", "admin");
+}, [router, pathname]);
+
   const admin = useAdmin();
 
   const [username, setUsername] = useState("");

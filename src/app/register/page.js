@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
 import { apiPost, handleError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 
+import { enforceLiveness } from "../../lib/livenessGuard";
+
+
 export default function RegisterPage() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // If not passed recently, redirect to /liveness?next=/register
+    enforceLiveness(router, pathname || "/register");
+  }, [router, pathname]);
+
   const auth = useAuth();
 
   const [step, setStep] = useState(1);
@@ -87,7 +98,7 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/40 to-cyan-50/30 p-4 font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      
+
       {/* Decorative Background Blurs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div className="absolute -top-[10%] -left-[10%] w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl opacity-60" />
@@ -95,7 +106,7 @@ export default function RegisterPage() {
       </div>
 
       <div className="w-full max-w-md space-y-6 animate-fade-in-up">
-        
+
         {/* Header Section */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-extrabold tracking-tight text-emerald-950">
@@ -121,7 +132,7 @@ export default function RegisterPage() {
               {banner.type === "error" ? (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               ) : (
-                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               )}
             </span>
             <span className="text-sm font-medium leading-relaxed">{banner.message}</span>
@@ -130,12 +141,16 @@ export default function RegisterPage() {
 
         {/* Main Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 relative overflow-hidden">
-          
+
           {/* Top Gradient Line */}
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-cyan-500" />
 
           {step === 1 ? (
             <form onSubmit={sendOtp} className="space-y-6">
+              <p className="mb-3 text-xs text-slate-500">
+                You may be redirected to a quick liveness check (blink + head turn) before registration.
+              </p>
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">
                   Mobile Number
@@ -161,10 +176,10 @@ export default function RegisterPage() {
                 className="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/30 hover:scale-[1.01] focus:ring-4 focus:ring-emerald-500/30 disabled:opacity-70 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {loading ? (
-                   <span className="flex items-center justify-center gap-2">
-                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                     Sending...
-                   </span>
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                    Sending...
+                  </span>
                 ) : (
                   "Send Verification Code"
                 )}
@@ -172,7 +187,7 @@ export default function RegisterPage() {
             </form>
           ) : (
             <form onSubmit={verifyAndCreate} className="space-y-5">
-              
+
               {/* Phone Summary */}
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -232,9 +247,9 @@ export default function RegisterPage() {
             </form>
           )}
         </div>
-        
+
         <p className="text-center text-xs text-slate-400">
-           Secure • Encrypted • Private
+          Secure • Encrypted • Private
         </p>
 
       </div>

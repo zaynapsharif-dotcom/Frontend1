@@ -1,44 +1,104 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import LivenessChecker from "../../components/LivenessChecker";
+
+const TTL_MS = 90 * 1000;
+const BASE_KEY = "evote_liveness_pass";
+
+function safeNextPath(nextParam) {
+  // Only allow internal paths to prevent open redirects
+  if (!nextParam) return "/login";
+  if (nextParam.startsWith("/") && !nextParam.startsWith("//")) return nextParam;
+  return "/login";
+}
+
 
 export default function LivenessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const scope = useMemo(() => {
+    return searchParams?.get("scope") || "";
+  }, [searchParams]);
+
+  const storageKey = useMemo(() => {
+    return scope ? `${BASE_KEY}:${scope}` : BASE_KEY;
+  }, [scope]);
+
+
+  const nextPath = useMemo(() => {
+    const nextParam = searchParams?.get("next") || "";
+    return safeNextPath(nextParam);
+  }, [searchParams]);
+
+  const [passed, setPassed] = useState(false);
+
+  // If already passed very recently, jump straight to next
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data?.exp && Date.now() < data.exp) {
+        router.replace(nextPath);
+      }
+    } catch { }
+  }, [router, nextPath]);
+
+  useEffect(() => {
+    if (!passed) return;
+    try {
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          ok: true,
+          exp: Date.now() + TTL_MS,
+        })
+      );
+    } catch { }
+
+    router.replace(nextPath);
+  }, [passed, router, nextPath]);
 
   return (
-    <main className="max-w-2xl space-y-5">
-      <h1 className="text-2xl font-semibold">Liveness Check</h1>
-
-      <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5 space-y-3">
-        <p className="text-sm text-[rgb(var(--muted))]">
-          This is a placeholder page. Real liveness detection will be added later.
-        </p>
-
-        <div className="rounded-lg border border-[rgb(var(--border))] bg-white p-4">
-          <div className="font-medium">Instructions</div>
-          <ul className="mt-2 list-disc pl-5 text-sm text-[rgb(var(--muted))] space-y-1">
-            <li>Blink twice.</li>
-            <li>Turn your head left, then right.</li>
-            <li>Look at the camera and stay still for 2 seconds.</li>
-          </ul>
+    <div className="min-h-screen px-4 py-10 bg-slate-50">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-slate-900">Liveness Verification</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            This is required before Register/Login. We only check <b>blink</b> + <b>head turn</b>.
+            No face data is stored.
+          </p>
+          <div className="mt-3 text-xs text-slate-500">
+            After you pass, you’ll be redirected to:{" "}
+            <span className="font-mono text-slate-700">{nextPath}</span>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <LivenessChecker
+          onChange={(s) => {
+            if (s?.livenessPassed) setPassed(true);
+          }}
+        />
+
+        <div className="mt-6 flex gap-2 flex-wrap">
           <button
-            onClick={() => router.push("/ballot")}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            onClick={() => router.replace(nextPath)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50"
           >
-            I passed
+            Back
           </button>
 
           <button
-            onClick={() => router.push("/")}
-            className="rounded-lg border border-[rgb(var(--border))] px-4 py-2 text-sm hover:bg-white"
+            onClick={() => router.replace("/")}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50"
           >
-            Back to Home
+            Home
           </button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
