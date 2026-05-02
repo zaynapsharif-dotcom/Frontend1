@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const STORAGE_KEY = "evote_voter_auth_v1";
 
@@ -16,15 +23,17 @@ function safeParse(json) {
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [voter, setVoter] = useState(null);
+  const [voter, setVoterState] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
-  function saveToStorage(nextToken, nextVoter) {
+  const saveToStorage = useCallback((nextToken, nextVoter) => {
     if (typeof window === "undefined") return;
+
     if (!nextToken) {
       localStorage.removeItem(STORAGE_KEY);
       return;
     }
+
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -32,36 +41,63 @@ export function AuthProvider({ children }) {
         voter: nextVoter || null,
       })
     );
-  }
+  }, []);
 
-  function loadFromStorage() {
+  const loadFromStorage = useCallback(() => {
     if (typeof window === "undefined") return;
+
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = safeParse(raw);
+
     if (parsed?.token) {
       setToken(parsed.token);
-      setVoter(parsed.voter || null);
+      setVoterState(parsed.voter || null);
     }
-  }
+  }, []);
 
-  function login(nextToken, nextVoter) {
-    setToken(nextToken);
-    setVoter(nextVoter || null);
-    saveToStorage(nextToken, nextVoter || null);
-  }
+  const login = useCallback(
+    (nextToken, nextVoter) => {
+      setToken(nextToken);
+      setVoterState(nextVoter || null);
+      saveToStorage(nextToken, nextVoter || null);
+    },
+    [saveToStorage]
+  );
 
-  function logout() {
+  const logout = useCallback(() => {
     setToken(null);
-    setVoter(null);
+    setVoterState(null);
     saveToStorage(null, null);
-  }
+  }, [saveToStorage]);
+
+  /**
+   * Safely update voter data in both React state and localStorage.
+   *
+   * Why this matters:
+   * After successful voting, the frontend may need to set hasVoted=true.
+   * If we only update React state, localStorage can stay stale and restore
+   * old voter data after refresh.
+   */
+  const updateVoter = useCallback(
+    (nextVoterOrUpdater) => {
+      setVoterState((currentVoter) => {
+        const nextVoter =
+          typeof nextVoterOrUpdater === "function"
+            ? nextVoterOrUpdater(currentVoter)
+            : nextVoterOrUpdater;
+
+        saveToStorage(token, nextVoter || null);
+        return nextVoter || null;
+      });
+    },
+    [saveToStorage, token]
+  );
 
   // Load once on mount
   useEffect(() => {
     loadFromStorage();
     setIsReady(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadFromStorage]);
 
   const value = useMemo(
     () => ({
@@ -71,9 +107,15 @@ export function AuthProvider({ children }) {
       isLoggedIn: !!token,
       login,
       logout,
-      setVoter, // useful after calling /me later
+
+      // Preferred method: updates state + localStorage.
+      updateVoter,
+
+      // Backward-compatible alias for old code that calls auth.setVoter(...).
+      // This now persists to localStorage too.
+      setVoter: updateVoter,
     }),
-    [token, voter, isReady]
+    [token, voter, isReady, login, logout, updateVoter]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

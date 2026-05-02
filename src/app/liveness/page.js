@@ -14,7 +14,6 @@ function safeNextPath(nextParam) {
   return "/login";
 }
 
-
 export default function LivenessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,7 +25,6 @@ export default function LivenessPage() {
   const storageKey = useMemo(() => {
     return scope ? `${BASE_KEY}:${scope}` : BASE_KEY;
   }, [scope]);
-
 
   const nextPath = useMemo(() => {
     const nextParam = searchParams?.get("next") || "";
@@ -44,11 +42,12 @@ export default function LivenessPage() {
       if (data?.exp && Date.now() < data.exp) {
         router.replace(nextPath);
       }
-    } catch { }
-  }, [router, nextPath]);
+    } catch {}
+  }, [router, nextPath, storageKey]);
 
   useEffect(() => {
     if (!passed) return;
+
     try {
       sessionStorage.setItem(
         storageKey,
@@ -57,10 +56,10 @@ export default function LivenessPage() {
           exp: Date.now() + TTL_MS,
         })
       );
-    } catch { }
+    } catch {}
 
     router.replace(nextPath);
-  }, [passed, router, nextPath]);
+  }, [passed, router, nextPath, storageKey]);
 
   return (
     <div className="min-h-screen px-4 py-10 bg-slate-50">
@@ -85,7 +84,7 @@ export default function LivenessPage() {
 
         <div className="mt-6 flex gap-2 flex-wrap">
           <button
-            onClick={() => router.replace(nextPath)}
+            onClick={() => router.replace("/")}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50"
           >
             Back

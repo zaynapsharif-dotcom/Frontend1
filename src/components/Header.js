@@ -37,13 +37,20 @@ function NavLink({ href, children, mobile = false, onClick }) {
 
 function StatusBadge({ type, label, id }) {
   const isVoter = type === "voter";
+
   return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-      isVoter 
-        ? "bg-slate-50 border-slate-100 text-slate-500" 
-        : "bg-slate-900 border-slate-800 text-slate-200 shadow-md"
-    }`}>
-      <div className={`h-2 w-2 rounded-full animate-pulse ${isVoter ? "bg-emerald-500" : "bg-emerald-400"}`} />
+    <div
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+        isVoter
+          ? "bg-slate-50 border-slate-100 text-slate-500"
+          : "bg-slate-900 border-slate-800 text-slate-200 shadow-md"
+      }`}
+    >
+      <div
+        className={`h-2 w-2 rounded-full animate-pulse ${
+          isVoter ? "bg-emerald-500" : "bg-emerald-400"
+        }`}
+      />
       <span className={isVoter ? "" : "text-slate-400"}>{label}:</span>
       <span className={`font-mono ${isVoter ? "text-slate-700" : "text-white"}`}>{id}</span>
     </div>
@@ -58,6 +65,8 @@ export default function Header() {
   const adminAuth = useAdmin();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const voterHasVoted = !!voterAuth.voter?.hasVoted;
 
   // Handle Scroll Effect
   useEffect(() => {
@@ -79,14 +88,22 @@ export default function Header() {
   const showAdminNav = adminAuth.isLoggedIn && !voterAuth.isLoggedIn;
 
   const links = (() => {
-    if (showVoterNav) return [
-      { href: "/ballot", label: "Ballot" },
-      { href: "/vote", label: "Vote" },
-      { href: "/profile", label: "Profile" },
-    ];
-    if (showAdminNav) return [
-      { href: "/admin", label: "Dashboard" },
-    ];
+    if (showVoterNav) {
+      return voterHasVoted
+        ? [
+            { href: "/already-voted", label: "Already Voted" },
+            { href: "/profile", label: "Profile" },
+          ]
+        : [
+            { href: "/ballot", label: "Ballot" },
+            { href: "/profile", label: "Profile" },
+          ];
+    }
+
+    if (showAdminNav) {
+      return [{ href: "/admin", label: "Dashboard" }];
+    }
+
     return [
       { href: "/", label: "Home" },
       { href: "/register", label: "Register" },
@@ -105,7 +122,6 @@ export default function Header() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          
           {/* Logo */}
           <Link
             href="/"
@@ -117,9 +133,11 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {links.map((link) => (
-              <NavLink key={link.href} href={link.href}>{link.label}</NavLink>
+              <NavLink key={link.href} href={link.href}>
+                {link.label}
+              </NavLink>
             ))}
-            
+
             {(showVoterNav || showAdminNav) && (
               <button
                 onClick={() => handleLogout(showVoterNav ? "voter" : "admin")}
@@ -136,9 +154,13 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             ) : (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             )}
           </button>
         </div>
@@ -147,10 +169,16 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-white/95 backdrop-blur-xl border-b border-slate-200 shadow-xl px-6 py-4 flex flex-col gap-2 animate-in slide-in-from-top-5">
             {links.map((link) => (
-              <NavLink key={link.href} href={link.href} mobile onClick={() => setMobileMenuOpen(false)}>
+              <NavLink
+                key={link.href}
+                href={link.href}
+                mobile
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 {link.label}
               </NavLink>
             ))}
+
             {(showVoterNav || showAdminNav) && (
               <button
                 onClick={() => handleLogout(showVoterNav ? "voter" : "admin")}
@@ -173,18 +201,18 @@ export default function Header() {
             {showVoterNav && voterAuth.voter?.voterId && (
               <>
                 <StatusBadge type="voter" label="Voter ID" id={voterAuth.voter.voterId} />
-                {voterAuth.voter?.hasVoted && (
+                {voterHasVoted && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 text-xs text-emerald-700 font-bold shadow-sm">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
                     Submitted
                   </span>
                 )}
               </>
             )}
-            
-            {showAdminNav && (
-              <StatusBadge type="admin" label="Session" id="Active" />
-            )}
+
+            {showAdminNav && <StatusBadge type="admin" label="Session" id="Active" />}
           </div>
         </div>
       )}

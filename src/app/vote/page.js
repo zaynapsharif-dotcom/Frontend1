@@ -22,6 +22,25 @@ export default function VotePage() {
   const [tokenInfo, setTokenInfo] = useState(null); // { tokenId, nonce, expiresAt }
   const [stage, setStage] = useState("confirm"); // confirm | issued
 
+  function markLocalVoterAsVoted() {
+    const updateFn = (currentVoter) => {
+      if (!currentVoter) return currentVoter;
+      return {
+        ...currentVoter,
+        hasVoted: true,
+      };
+    };
+
+    if (typeof auth.updateVoter === "function") {
+      auth.updateVoter(updateFn);
+      return;
+    }
+
+    if (typeof auth.setVoter === "function") {
+      auth.setVoter(updateFn);
+    }
+  }
+
   // Guard: require login
   useEffect(() => {
     if (!auth.isReady) return;
@@ -69,11 +88,12 @@ export default function VotePage() {
 
       setTokenInfo({ tokenId, nonce, expiresAt });
       setStage("issued");
-      toast.success("Token issued.");
+      toast.success("Security token issued.");
     } catch (err) {
       const e2 = handleError(err);
 
       if (e2.code === "ALREADY_VOTED") {
+        markLocalVoterAsVoted();
         toast.info(friendlyError(e2.code, e2.message));
         router.push("/already-voted");
         return;
@@ -106,18 +126,21 @@ export default function VotePage() {
       const res = await apiPost("/vote/submit", payload, { token: auth.token });
 
       if (res?.status === "accepted" || res?.status === "ok") {
+        markLocalVoterAsVoted();
         toast.success("Vote accepted.");
         router.push("/already-voted");
         return;
       }
 
-      // treat no-error as success
+      // Treat no-error as success
+      markLocalVoterAsVoted();
       toast.success("Vote submitted.");
       router.push("/already-voted");
     } catch (err) {
       const e2 = handleError(err);
 
       if (e2.code === "ALREADY_VOTED" || e2.code === "TOKEN_ALREADY_USED") {
+        markLocalVoterAsVoted();
         toast.info(friendlyError(e2.code, e2.message));
         router.push("/already-voted");
         return;
@@ -141,7 +164,6 @@ export default function VotePage() {
   return (
     <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 p-4 sm:p-6">
       <div className="w-full max-w-2xl animate-fade-in-up">
-        
         {/* Header Section */}
         <div className="mb-8 text-center sm:text-left">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-emerald-950">
@@ -154,12 +176,10 @@ export default function VotePage() {
 
         {/* Main Card */}
         <div className="relative overflow-hidden rounded-3xl bg-white border border-white/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] backdrop-blur-xl p-6 sm:p-10">
-          
           {/* Subtle decorative gradient blob inside card */}
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-50/50 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="relative space-y-8">
-            
             {/* Context Info Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="group rounded-2xl bg-slate-50/80 p-4 border border-slate-100 transition-all hover:border-emerald-200 hover:shadow-sm">
@@ -187,19 +207,21 @@ export default function VotePage() {
                 <div className="bg-emerald-100/50 px-4 py-2 flex items-center gap-2 border-b border-emerald-100">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-xs font-bold uppercase text-emerald-800 tracking-wide">
-                    Security Token Generated
+                    Security Token Ready
                   </span>
                 </div>
+
                 <div className="p-4 space-y-3 text-sm">
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-slate-500 font-medium">Token ID:</span>
-                    <span className="font-mono text-slate-700 break-all">{tokenInfo.tokenId}</span>
+                  <div className="rounded-lg border border-emerald-100 bg-white/70 p-3">
+                    <p className="font-semibold text-emerald-900">
+                      Your temporary voting authorization is ready.
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                      Token details are intentionally hidden on-screen for security. Continue only
+                      when you are ready to submit your final vote.
+                    </p>
                   </div>
-                  <div className="h-px bg-emerald-100/50" />
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                    <span className="text-slate-500 font-medium">Nonce:</span>
-                    <span className="font-mono text-slate-700 break-all">{tokenInfo.nonce}</span>
-                  </div>
+
                   {tokenInfo.expiresAt ? (
                     <>
                       <div className="h-px bg-emerald-100/50" />
@@ -218,8 +240,18 @@ export default function VotePage() {
             {/* Error Banner */}
             {banner ? (
               <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm">
-                <svg className="w-5 h-5 shrink-0 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="w-5 h-5 shrink-0 text-red-500 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 <span className="text-sm font-medium">{banner.message}</span>
               </div>
@@ -244,8 +276,18 @@ export default function VotePage() {
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? "Issuing..." : "Issue Security Token"}
                     {!loading && (
-                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
                       </svg>
                     )}
                   </span>
@@ -259,19 +301,28 @@ export default function VotePage() {
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? "Submitting..." : "Confirm & Submit Vote"}
                     {!loading && (
-                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     )}
                   </span>
                 </button>
               )}
             </div>
-            
+
             <p className="text-center text-xs text-slate-400 font-medium pt-2">
               Flow: Issue Token &rarr; Submit Vote. Secure & Verified.
             </p>
-
           </div>
         </div>
       </div>
