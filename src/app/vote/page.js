@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiPost, handleError } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -9,7 +9,20 @@ import { friendlyError } from "../../lib/format";
 
 const ELECTION_ID = process.env.NEXT_PUBLIC_ELECTION_ID || "default";
 
-export default function VotePage() {
+function VoteLoadingFallback() {
+  return (
+    <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-100 p-4 sm:p-6">
+      <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+        <span className="text-sm font-semibold text-slate-500">
+          Preparing secure vote page...
+        </span>
+      </div>
+    </main>
+  );
+}
+
+function VotePageContent() {
   const router = useRouter();
   const params = useSearchParams();
   const auth = useAuth();
@@ -176,7 +189,6 @@ export default function VotePage() {
 
         {/* Main Card */}
         <div className="relative overflow-hidden rounded-3xl bg-white border border-white/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] backdrop-blur-xl p-6 sm:p-10">
-          {/* Subtle decorative gradient blob inside card */}
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-50/50 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative space-y-8">
@@ -327,5 +339,13 @@ export default function VotePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function VotePage() {
+  return (
+    <Suspense fallback={<VoteLoadingFallback />}>
+      <VotePageContent />
+    </Suspense>
   );
 }

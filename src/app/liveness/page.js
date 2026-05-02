@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LivenessChecker from "../../components/LivenessChecker";
 
@@ -14,7 +14,24 @@ function safeNextPath(nextParam) {
   return "/login";
 }
 
-export default function LivenessPage() {
+function LivenessLoadingFallback() {
+  return (
+    <div className="min-h-screen px-4 py-10 bg-slate-50">
+      <div className="mx-auto max-w-5xl">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+            <span className="text-sm font-semibold text-slate-500">
+              Preparing liveness verification...
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LivenessPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,7 +55,9 @@ export default function LivenessPage() {
     try {
       const raw = sessionStorage.getItem(storageKey);
       if (!raw) return;
+
       const data = JSON.parse(raw);
+
       if (data?.exp && Date.now() < data.exp) {
         router.replace(nextPath);
       }
@@ -65,11 +84,15 @@ export default function LivenessPage() {
     <div className="min-h-screen px-4 py-10 bg-slate-50">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-slate-900">Liveness Verification</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">
+            Liveness Verification
+          </h1>
+
           <p className="mt-2 text-sm text-slate-600">
-            This is required before Register/Login. We only check <b>blink</b> + <b>head turn</b>.
-            No face data is stored.
+            This is required before Register/Login. We only check <b>blink</b> +{" "}
+            <b>head turn</b>. No face data is stored.
           </p>
+
           <div className="mt-3 text-xs text-slate-500">
             After you pass, you’ll be redirected to:{" "}
             <span className="font-mono text-slate-700">{nextPath}</span>
@@ -99,5 +122,13 @@ export default function LivenessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LivenessPage() {
+  return (
+    <Suspense fallback={<LivenessLoadingFallback />}>
+      <LivenessPageContent />
+    </Suspense>
   );
 }
